@@ -167,3 +167,14 @@ def test_retry_after_parses_http_date_and_caps() -> None:
 
     junk = httpx.Response(429, headers={"Retry-After": "soon-ish"})
     assert HTTPClient._parse_retry_after(junk) is None
+
+
+async def test_for_source_reads_rate_limit_from_config() -> None:
+    default = HTTPClient.for_source("https://mock", {})
+    paced = HTTPClient.for_source("https://mock", {"rate_limit_per_second": 0.5})
+    try:
+        assert default._min_interval == 0.2
+        assert paced._min_interval == 2.0
+    finally:
+        await default.close()
+        await paced.close()

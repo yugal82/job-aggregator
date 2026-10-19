@@ -45,7 +45,7 @@ async def trigger_sync(
 
     results: list[dict[str, Any]] = []
     for cs, source in rows:
-        http = HTTPClient(base_url=source.base_url or "")
+        http = HTTPClient.for_source(source.base_url, cs.configuration)
         try:
             try:
                 adapter = build_adapter(

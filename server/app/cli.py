@@ -86,7 +86,7 @@ async def _sync_one(target: dict) -> bool:
         },
     )
 
-    http = HTTPClient(base_url=target["base_url"] or "")
+    http = HTTPClient.for_source(target["base_url"], target["config"])
     try:
         try:
             adapter = build_adapter(

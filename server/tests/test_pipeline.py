@@ -1,7 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.ingestion.lifecycle import CLOSE_AFTER_MISSES
+from app.ingestion.lifecycle import CLOSE_AFTER_MISSES, MIN_ACTIVE_FOR_GUARD
 from app.ingestion.pipeline import run_sync
 from app.models.company import Company
 from app.models.company_source import CompanySource
@@ -274,3 +274,51 @@ async def test_pipeline_records_failure(
     await db_session.refresh(run)
     assert run.status == SyncRunStatus.FAILED
     assert run.error and "boom" in run.error
+
+
+async def _sync_ids(session_factory, company, source, cs, ids):
+    adapter = StubAdapter(
+        company_slug="stripe",
+        raw_jobs=[make_raw(source_job_id=str(i), title=f"Job {i}") for i in ids],
+    )
+    return await run_sync(
+        session_factory=session_factory,
+        adapter=adapter,
+        company_id=company.id,
+        source_id=source.id,
+        company_source_id=cs.id,
+        adapter_name="stub",
+    )
+
+
+async def test_partial_discovery_does_not_mark_misses(
+    db_session: AsyncSession, session_factory: async_sessionmaker
+) -> None:
+    """A truncated response (Apple once served 19 of ~2,700) must not count
+    as a miss for every unseen job — repeated, it would close the company."""
+    company, source, cs = await _setup_company_source(db_session)
+    everything = range(MIN_ACTIVE_FOR_GUARD * 2)
+    await _sync_ids(session_factory, company, source, cs, everything)
+
+    for _ in range(CLOSE_AFTER_MISSES + 1):
+        outcome = await _sync_ids(session_factory, company, source, cs, range(3))
+        assert outcome.jobs_closed == 0
+
+    missed = await db_session.scalar(
+        select(func.count()).select_from(Job).where(Job.consecutive_missed_syncs > 0)
+    )
+    assert missed == 0
+
+
+async def test_normal_churn_still_closes_jobs(
+    db_session: AsyncSession, session_factory: async_sessionmaker
+) -> None:
+    """Above the ratio, unseen jobs still accrue misses and close."""
+    company, source, cs = await _setup_company_source(db_session)
+    total = MIN_ACTIVE_FOR_GUARD * 2
+    await _sync_ids(session_factory, company, source, cs, range(total))
+
+    kept = range(total - 5)  # 5 postings removed — well above the ratio
+    for i in range(1, CLOSE_AFTER_MISSES + 1):
+        outcome = await _sync_ids(session_factory, company, source, cs, kept)
+        assert outcome.jobs_closed == (5 if i == CLOSE_AFTER_MISSES else 0)

@@ -56,7 +56,7 @@ async def run_scheduled_sync(
             log.info("sync skipped — lock held by another worker", extra=labels)
             return
 
-        http = HTTPClient(base_url=target["base_url"] or "")
+        http = HTTPClient.for_source(target["base_url"], target["config"])
         try:
             adapter = build_adapter(
                 provider=provider,

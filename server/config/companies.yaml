@@ -240,6 +240,9 @@ companies:
           tenant: salesforce
           site: External_Career_Site
           applied_facets: {}
+          # Salesforce's tenant 429s CI runners after ~50 fast requests;
+          # one request every 2s keeps the ~100-page crawl under the limit.
+          rate_limit_per_second: 0.5
         priority: medium
 
   # ---- Workday candidates still blocked (left disabled) ----

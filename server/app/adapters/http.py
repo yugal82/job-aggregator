@@ -49,6 +49,16 @@ class HTTPClient:
         self._last_request_time = 0.0
         self._rate_lock = asyncio.Lock()
 
+    @classmethod
+    def for_source(cls, base_url: str | None, config: dict[str, Any] | None) -> "HTTPClient":
+        """Client for one company source. ``rate_limit_per_second`` in the
+        source's yaml ``configuration`` overrides the default pacing for
+        tenants that throttle hard (e.g. Salesforce's Workday)."""
+        rate = (config or {}).get("rate_limit_per_second")
+        if rate is None:
+            return cls(base_url=base_url or "")
+        return cls(base_url=base_url or "", rate_limit_per_second=float(rate))
+
     async def _throttle(self) -> None:
         if self._min_interval <= 0:
             return
