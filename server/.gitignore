@@ -11,3 +11,5 @@ venv/
 htmlcov/
 dist/
 build/
+.vercel
+.env*
