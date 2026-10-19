@@ -26,6 +26,7 @@ canonical row — no per-job detail round-trip required. Fields of interest:
 Pagination: hit ``/en-us/search?page=N`` for successive pages. 20 results
 per page is Apple's default.
 """
+import asyncio
 import json
 import logging
 import re
@@ -179,6 +180,12 @@ class AppleAdapter(JobSourceAdapter):
 
     _MAX_PAGES = _MAX_PAGES
     _PAGE_SIZE = _PAGE_SIZE
+    # Apple occasionally serves a normal-looking page with zero results
+    # (seen from CI runners). Apple always has US openings, so an empty
+    # first page is a bad response, not "no jobs": retry, then fail the
+    # sync rather than report found=0.
+    _EMPTY_FIRST_PAGE_RETRIES = 2
+    _EMPTY_RETRY_DELAY_SECONDS = 10.0
 
     def _filters(self) -> dict[str, Any]:
         return self.config.get("filters") or {}
@@ -197,6 +204,22 @@ class AppleAdapter(JobSourceAdapter):
         search = hydration.get("loaderData", {}).get("search", {}) or {}
         return search
 
+    async def _retry_empty_first_page(self) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        for attempt in range(1, self._EMPTY_FIRST_PAGE_RETRIES + 1):
+            log.warning(
+                "apple returned an empty first page, retrying",
+                extra={"company": self.company_slug, "attempt": attempt},
+            )
+            await asyncio.sleep(self._EMPTY_RETRY_DELAY_SECONDS)
+            search = await self._fetch_page(1)
+            results = search.get("searchResults") or []
+            if results:
+                return results, search
+        raise RuntimeError(
+            "apple search returned no results on page 1 after "
+            f"{self._EMPTY_FIRST_PAGE_RETRIES} retries; refusing to report 0 jobs"
+        )
+
     async def discover(self) -> list[RawJob]:
         all_results: list[dict[str, Any]] = []
         total: int | None = None
@@ -205,6 +228,8 @@ class AppleAdapter(JobSourceAdapter):
         for _ in range(self._MAX_PAGES):
             search = await self._fetch_page(page)
             results = search.get("searchResults") or []
+            if not results and page == 1:
+                results, search = await self._retry_empty_first_page()
             if not results:
                 break
             all_results.extend(results)

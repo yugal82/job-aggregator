@@ -8,6 +8,7 @@ Usage:
 import argparse
 import asyncio
 import logging
+import sys
 from pathlib import Path
 
 from sqlalchemy import select
@@ -74,7 +75,8 @@ async def _load_targets(company_slug: str | None) -> list[dict]:
         ]
 
 
-async def _sync_one(target: dict) -> None:
+async def _sync_one(target: dict) -> bool:
+    """Run one source sync. Returns False on failure (already logged)."""
     log.info(
         "sync starting",
         extra={
@@ -107,6 +109,7 @@ async def _sync_one(target: dict) -> None:
                 f"new={outcome.jobs_new} updated={outcome.jobs_updated} "
                 f"closed={outcome.jobs_closed} (sync_run_id={outcome.sync_run_id})"
             )
+            return True
         except Exception as exc:  # noqa: BLE001
             # Adapter isolation: don't let one broken source kill the batch.
             log.exception(
@@ -120,17 +123,20 @@ async def _sync_one(target: dict) -> None:
                 f"[{target['company_slug']}/{target['source_name']}] "
                 f"failed: {type(exc).__name__}: {exc}"
             )
+            return False
     finally:
         await http.close()
 
 
-async def sync_company(company_slug: str) -> None:
+async def sync_company(company_slug: str) -> bool:
+    """Sync every target; one failure doesn't stop the rest. Returns
+    False if any target failed so the CLI can exit non-zero."""
     targets = await _load_targets(company_slug)
     if not targets:
         print("no enabled company_sources to sync")
-        return
-    for target in targets:
-        await _sync_one(target)
+        return True
+    results = [await _sync_one(target) for target in targets]
+    return all(results)
 
 
 async def reconcile_config(path: Path) -> None:
@@ -175,7 +181,9 @@ def main() -> None:
     args = _build_parser().parse_args()
 
     if args.cmd == "sync":
-        asyncio.run(sync_company(args.company))
+        if not asyncio.run(sync_company(args.company)):
+            # Non-zero so a failed source shows red in GitHub Actions.
+            sys.exit(1)
     elif args.cmd == "reconcile-config":
         asyncio.run(reconcile_config(Path(args.path)))
 

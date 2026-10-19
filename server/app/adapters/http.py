@@ -6,6 +6,8 @@ across companies — a rate-limit budget belongs to the source, not the process.
 import asyncio
 import logging
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import httpx
@@ -14,6 +16,9 @@ log = logging.getLogger(__name__)
 
 
 RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
+
+# Never sleep longer than this on a server-supplied Retry-After.
+MAX_RETRY_AFTER_SECONDS = 120.0
 
 
 class HTTPClient:
@@ -24,6 +29,7 @@ class HTTPClient:
         rate_limit_per_second: float = 5.0,
         max_concurrency: int = 5,
         max_retries: int = 3,
+        max_rate_limit_retries: int = 5,
         timeout_seconds: float = 30.0,
         transport: httpx.AsyncBaseTransport | None = None,
         headers: dict[str, str] | None = None,
@@ -37,6 +43,9 @@ class HTTPClient:
         self._sem = asyncio.Semaphore(max_concurrency)
         self._min_interval = 1.0 / rate_limit_per_second if rate_limit_per_second > 0 else 0.0
         self._max_retries = max_retries
+        # 429s get their own, longer budget: career sites (Workday especially)
+        # throttle shared CI runner IPs and need minutes, not seconds, to cool.
+        self._max_rate_limit_retries = max(max_retries, max_rate_limit_retries)
         self._last_request_time = 0.0
         self._rate_lock = asyncio.Lock()
 
@@ -56,19 +65,30 @@ class HTTPClient:
         return min(0.5 * (2**attempt), 30.0)
 
     @staticmethod
+    def _rate_limit_backoff_seconds(attempt: int) -> float:
+        # 5, 10, 20, 40, 60, ... capped at 60s
+        return min(5.0 * (2**attempt), 60.0)
+
+    @staticmethod
     def _parse_retry_after(response: httpx.Response) -> float | None:
         header = response.headers.get("Retry-After")
         if header is None:
             return None
         try:
-            return max(0.0, float(header))
+            seconds = float(header)
         except ValueError:
-            # HTTP-date form not supported for MVP; ignore and fall back to backoff
-            return None
+            try:
+                when = parsedate_to_datetime(header)
+            except (TypeError, ValueError):
+                return None
+            if when.tzinfo is None:
+                when = when.replace(tzinfo=timezone.utc)
+            seconds = (when - datetime.now(timezone.utc)).total_seconds()
+        return min(max(0.0, seconds), MAX_RETRY_AFTER_SECONDS)
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         last_error: Exception | None = None
-        for attempt in range(self._max_retries + 1):
+        for attempt in range(self._max_rate_limit_retries + 1):
             async with self._sem:
                 await self._throttle()
                 try:
@@ -85,9 +105,16 @@ class HTTPClient:
                     await asyncio.sleep(wait)
                     continue
 
-            if response.status_code in RETRYABLE_STATUS and attempt < self._max_retries:
+            rate_limited = response.status_code == 429
+            budget = self._max_rate_limit_retries if rate_limited else self._max_retries
+            if response.status_code in RETRYABLE_STATUS and attempt < budget:
                 retry_after = self._parse_retry_after(response)
-                wait = retry_after if retry_after is not None else self._backoff_seconds(attempt)
+                if retry_after is not None:
+                    wait = retry_after
+                elif rate_limited:
+                    wait = self._rate_limit_backoff_seconds(attempt)
+                else:
+                    wait = self._backoff_seconds(attempt)
                 log.warning(
                     "http retryable status, retrying",
                     extra={

@@ -40,7 +40,9 @@ jobs:
   sync:
     needs: companies
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # NVIDIA (~2000 Workday postings) takes ~35 min; jobs only persist on the
+    # final commit, so leave generous headroom. Free on a public repo.
+    timeout-minutes: 90
     strategy:
       fail-fast: false        # one broken career site shouldn't cancel the rest
       max-parallel: 10        # keep Neon connection count modest

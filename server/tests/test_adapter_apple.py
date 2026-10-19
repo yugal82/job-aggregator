@@ -17,6 +17,17 @@ from app.adapters.http import HTTPClient
 PAGE_FIXTURE = Path(__file__).parent / "fixtures/adapters/apple/search_page_1.html"
 
 
+@pytest.fixture(autouse=True)
+def _no_empty_page_delay(monkeypatch):
+    monkeypatch.setattr(AppleAdapter, "_EMPTY_RETRY_DELAY_SECONDS", 0.0)
+
+
+def _empty_page_html() -> str:
+    payload = {"loaderData": {"search": {"searchResults": [], "totalRecords": 0}}}
+    escaped = json.dumps(json.dumps(payload))
+    return f'<script>window.__staticRouterHydrationData = JSON.parse({escaped})</script>'
+
+
 def _page_html() -> str:
     return PAGE_FIXTURE.read_text()
 
@@ -226,12 +237,7 @@ async def test_filters_pass_through_as_query_params() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         captured_urls.append(str(request.url))
-        payload = {"loaderData": {"search": {"searchResults": [], "totalRecords": 0}}}
-        escaped = json.dumps(json.dumps(payload))
-        return httpx.Response(
-            200,
-            text=f'<script>window.__staticRouterHydrationData = JSON.parse({escaped})</script>',
-        )
+        return httpx.Response(200, text=_page_html())
 
     http = HTTPClient(
         base_url="https://jobs.apple.com",
@@ -305,3 +311,45 @@ async def test_source_url_includes_slugified_title() -> None:
     assert raws[0].source_url == (
         "https://jobs.apple.com/en-us/details/200611820/senior-software-engineer-core-os"
     )
+
+
+async def test_empty_first_page_is_retried_then_recovers() -> None:
+    pages = [_empty_page_html(), _page_html()]
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        idx = calls["n"]
+        calls["n"] += 1
+        return httpx.Response(200, text=pages[idx] if idx < len(pages) else _empty_page_html())
+
+    http = HTTPClient(
+        base_url="https://jobs.apple.com",
+        transport=httpx.MockTransport(handler),
+        rate_limit_per_second=0,
+    )
+    try:
+        raws = await _adapter(http).discover()
+    finally:
+        await http.close()
+    assert raws, "retry of page 1 should have produced jobs"
+
+
+async def test_persistently_empty_first_page_fails_the_sync() -> None:
+    """Never report found=0 for Apple — that would hide a bad response."""
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(200, text=_empty_page_html())
+
+    http = HTTPClient(
+        base_url="https://jobs.apple.com",
+        transport=httpx.MockTransport(handler),
+        rate_limit_per_second=0,
+    )
+    try:
+        with pytest.raises(RuntimeError, match="no results on page 1"):
+            await _adapter(http).discover()
+    finally:
+        await http.close()
+    assert calls["n"] == 1 + AppleAdapter._EMPTY_FIRST_PAGE_RETRIES
