@@ -1,11 +1,9 @@
-import { z } from "zod";
 import { apiFetch } from "./client";
 import {
   jobDetailSchema,
   jobSummarySchema,
   pageSchema,
   recommendedJobSchema,
-  userJobStateSchema,
 } from "@/lib/types/job";
 
 const jobsPageSchema = pageSchema(jobSummarySchema);
@@ -26,6 +24,7 @@ export type JobsListParams = {
   company_tier?: string;
   source_type?: string;
   seniority?: string;
+  level?: string;
 };
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>) {
@@ -38,24 +37,12 @@ function buildQuery(params: Record<string, string | number | boolean | undefined
   return q ? `?${q}` : "";
 }
 
-export type JobsTab =
-  | "all"
-  | "recommended"
-  | "new"
-  | "saved"
-  | "applied"
-  | "dismissed";
+export type JobsTab = "all" | "recommended" | "new";
 
 function endpointForTab(tab: JobsTab): string {
   switch (tab) {
     case "new":
       return "/api/jobs/new";
-    case "saved":
-      return "/api/jobs/saved";
-    case "applied":
-      return "/api/jobs/applied";
-    case "dismissed":
-      return "/api/jobs/dismissed";
     case "all":
     default:
       return "/api/jobs";
@@ -93,36 +80,5 @@ export function listRecommendations(
   return apiFetch(`/api/recommendations${buildQuery(params)}`, {
     schema: recommendedPageSchema,
     signal,
-  });
-}
-
-const jobUserStateResponseSchema = z.object({
-  user_id: z.number().int(),
-  job_id: z.string().uuid(),
-  state: userJobStateSchema,
-  created_at: z.string(),
-  updated_at: z.string(),
-});
-
-export type JobUserStateResponse = z.infer<typeof jobUserStateResponseSchema>;
-
-export function saveJob(id: string) {
-  return apiFetch(`/api/jobs/${id}/save`, {
-    schema: jobUserStateResponseSchema,
-    method: "POST",
-  });
-}
-
-export function applyJob(id: string) {
-  return apiFetch(`/api/jobs/${id}/apply`, {
-    schema: jobUserStateResponseSchema,
-    method: "POST",
-  });
-}
-
-export function dismissJob(id: string) {
-  return apiFetch(`/api/jobs/${id}/dismiss`, {
-    schema: jobUserStateResponseSchema,
-    method: "POST",
   });
 }

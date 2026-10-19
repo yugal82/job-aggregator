@@ -8,19 +8,9 @@ const LABELS: Record<JobsTab, string> = {
   all: "All",
   recommended: "Recommended",
   new: "New",
-  saved: "Saved",
-  applied: "Applied",
-  dismissed: "Dismissed",
 };
 
-const ORDER: JobsTab[] = [
-  "all",
-  "recommended",
-  "new",
-  "saved",
-  "applied",
-  "dismissed",
-];
+const ORDER: JobsTab[] = ["all", "recommended", "new"];
 
 export function JobTabs() {
   const { tab, setTab } = useTab();

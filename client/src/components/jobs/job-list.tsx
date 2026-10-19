@@ -169,12 +169,6 @@ function emptyCopyForTab(tab: string): string {
   switch (tab) {
     case "recommended":
       return "No recommendations yet. Set up your profile to see tailored matches.";
-    case "saved":
-      return "No saved jobs yet. Click Save on any job to collect it here.";
-    case "applied":
-      return "No applied jobs yet. Mark a job as applied and it will land here.";
-    case "dismissed":
-      return "No dismissed jobs.";
     case "new":
       return "No new jobs in the last 24 hours.";
     default:

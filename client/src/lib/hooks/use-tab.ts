@@ -4,14 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import type { JobsTab } from "@/lib/api/jobs";
 
-const TABS: readonly JobsTab[] = [
-  "all",
-  "recommended",
-  "new",
-  "saved",
-  "applied",
-  "dismissed",
-];
+const TABS: readonly JobsTab[] = ["all", "recommended", "new"];
 
 function parseTab(value: string | null): JobsTab {
   if (!value) return "all";

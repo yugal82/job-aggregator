@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { formatRelative } from "@/lib/time";
 import type { Company, JobSummary } from "@/lib/types/job";
 import { CompanyMark } from "./company-mark";
-import { JobActions } from "./job-actions";
 import { MatchPreview } from "./match-preview";
 
 type JobCardProps = {
@@ -13,11 +13,11 @@ type JobCardProps = {
 
 export function JobCard({ job, company }: JobCardProps) {
   const posted = job.posted_at ?? job.first_seen_at;
+  const applyUrl = job.application_url ?? job.canonical_url;
   const hasInteractive =
+    job.level ||
     job.employment_type ||
     job.workplace_type ||
-    job.user_state === "APPLIED" ||
-    job.user_state === "SAVED" ||
     job.status !== "ACTIVE" ||
     (job.match_strong_count ?? 0) > 0 ||
     (job.match_gap_count ?? 0) > 0;
@@ -60,22 +60,12 @@ export function JobCard({ job, company }: JobCardProps) {
             strong={job.match_strong_count}
             gap={job.match_gap_count}
           />
+          {job.level ? <Badge variant="outline">{job.level}</Badge> : null}
           {job.employment_type ? (
             <Badge variant="secondary">{job.employment_type}</Badge>
           ) : null}
           {job.workplace_type ? (
             <Badge variant="secondary">{job.workplace_type}</Badge>
-          ) : null}
-          {job.user_state === "APPLIED" ? (
-            <Badge
-              variant="secondary"
-              className="bg-emerald-50 text-emerald-700 border border-emerald-100"
-            >
-              Applied
-            </Badge>
-          ) : null}
-          {job.user_state === "SAVED" ? (
-            <Badge variant="secondary">Saved</Badge>
           ) : null}
           {job.status === "CLOSED" ? (
             <Badge variant="destructive">closed</Badge>
@@ -87,7 +77,16 @@ export function JobCard({ job, company }: JobCardProps) {
         <span className="text-xs text-muted-foreground">
           Posted {formatRelative(posted)}
         </span>
-        <JobActions jobId={job.id} state={job.user_state} variant="card" />
+        {applyUrl ? (
+          <a
+            href={applyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Apply ↗
+          </a>
+        ) : null}
       </div>
     </article>
   );

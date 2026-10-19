@@ -9,19 +9,6 @@ export const jobStatusSchema = z.enum([
 
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 
-export const userJobStateSchema = z.enum([
-  "VIEWED",
-  "SAVED",
-  "APPLIED",
-  "INTERVIEW",
-  "REJECTED",
-  "OFFER",
-  "WITHDRAWN",
-  "DISMISSED",
-]);
-
-export type UserJobState = z.infer<typeof userJobStateSchema>;
-
 export const companySchema = z.object({
   id: z.number().int(),
   name: z.string(),
@@ -92,7 +79,7 @@ export const jobSummarySchema = z.object({
   application_url: z.string().nullable(),
   canonical_url: z.string().nullable(),
   status: jobStatusSchema,
-  user_state: userJobStateSchema.nullable().optional(),
+  level: z.string().nullable().optional(),
   match_strong_count: z.number().int().nullable().optional(),
   match_gap_count: z.number().int().nullable().optional(),
 });

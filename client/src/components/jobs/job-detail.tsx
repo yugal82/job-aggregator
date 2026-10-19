@@ -29,7 +29,6 @@ import type {
   JobSourceLink,
 } from "@/lib/types/job";
 import { CompanyMark } from "./company-mark";
-import { JobActions } from "./job-actions";
 import { MatchExplanation } from "./match-explanation";
 
 function formatLocation(loc: JobLocation): string {
@@ -110,12 +109,14 @@ export function JobDetailView({ id }: { id: string }) {
     <article className="flex flex-col gap-6">
       <JobHeader job={job} posted={posted} />
 
-      {(job.employment_type ||
+      {(job.level ||
+        job.employment_type ||
         job.workplace_type ||
         salary ||
         job.department ||
         job.team) ? (
         <section className="flex flex-wrap gap-2">
+          {job.level ? <Badge variant="outline">{job.level}</Badge> : null}
           {job.employment_type ? (
             <Badge variant="secondary">{job.employment_type}</Badge>
           ) : null}
@@ -146,6 +147,7 @@ function JobHeader({
   job: JobDetailType;
   posted: string;
 }) {
+  const applyUrl = job.application_url ?? job.canonical_url;
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 gap-4">
@@ -174,9 +176,9 @@ function JobHeader({
         </div>
       </div>
       <div className="flex flex-col items-end gap-2">
-        {job.application_url ? (
+        {applyUrl ? (
           <a
-            href={job.application_url}
+            href={applyUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={buttonVariants()}
@@ -184,7 +186,6 @@ function JobHeader({
             Apply ↗
           </a>
         ) : null}
-        <JobActions jobId={job.id} state={job.user_state} variant="detail" />
       </div>
     </header>
   );
