@@ -1,0 +1,38 @@
+{
+  "count": 2,
+  "positions": [
+    {
+      "id": 790298014263,
+      "name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+      "posting_name": "AI Engineer 6 - AI Foundation & Tooling, Ads Platform",
+      "location": "Remote, United States",
+      "locations": ["Remote, United States"],
+      "department": "Data & Insights",
+      "business_unit": "Streaming",
+      "t_update": 1779148800,
+      "t_create": 1721692800,
+      "ats_job_id": "AJRT30201",
+      "display_job_id": "AJRT30201",
+      "work_location_option": "remote",
+      "canonicalPositionUrl": "https://explore.jobs.netflix.net/careers/job/790298014263",
+      "isPrivate": false,
+      "job_description": "<p>Build the AI foundation for Netflix Ads. We work on <b>large-scale</b> recommendation systems.</p><ul><li>Python</li><li>Spark</li></ul>"
+    },
+    {
+      "id": 790318636029,
+      "name": "Director - Film & Series Marketing - India",
+      "location": "Mumbai,India",
+      "locations": ["Mumbai,India"],
+      "department": "Marketing",
+      "business_unit": "Streaming",
+      "t_update": 1790812800,
+      "t_create": 1721000000,
+      "ats_job_id": "ADRM12345",
+      "display_job_id": "ADRM12345",
+      "work_location_option": "onsite",
+      "canonicalPositionUrl": "https://explore.jobs.netflix.net/careers/job/790318636029",
+      "isPrivate": false,
+      "job_description": "<p>Lead marketing for Netflix India.</p>"
+    }
+  ]
+}

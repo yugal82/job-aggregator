@@ -1,0 +1,65 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {
+      "id": "job_01H",
+      "title": "Research Engineer",
+      "location": "San Francisco, CA",
+      "secondaryLocations": [
+        {"location": "New York, NY"}
+      ],
+      "department": "Research",
+      "team": "Alignment",
+      "isListed": true,
+      "isRemote": false,
+      "descriptionPlain": "Do alignment research.",
+      "descriptionHtml": "<p>Do <b>alignment</b> research.</p>",
+      "publishedAt": "2026-09-01T12:00:00.000Z",
+      "updatedAt": "2026-09-05T12:00:00.000Z",
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/anthropic/job_01H",
+      "applyUrl": "https://jobs.ashbyhq.com/anthropic/job_01H/application",
+      "compensation": {
+        "compensationTierSummary": "$300,000 - $400,000 USD",
+        "compensationTiers": [
+          {
+            "id": "tier-1",
+            "components": [
+              {
+                "compensationType": "Salary",
+                "compensationValue": {
+                  "minValue": 300000,
+                  "maxValue": 400000,
+                  "currencyCode": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "job_02R",
+      "title": "Remote Software Engineer",
+      "location": "Remote (Global)",
+      "secondaryLocations": [],
+      "department": "Engineering",
+      "team": null,
+      "isListed": true,
+      "isRemote": true,
+      "descriptionPlain": "Write remote software.",
+      "descriptionHtml": "<p>Write remote software.</p>",
+      "publishedAt": "2026-09-03T00:00:00.000Z",
+      "updatedAt": "2026-09-03T00:00:00.000Z",
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/anthropic/job_02R",
+      "applyUrl": "https://jobs.ashbyhq.com/anthropic/job_02R/application"
+    },
+    {
+      "id": "job_03U",
+      "title": "Unlisted internal role",
+      "location": "SF",
+      "isListed": false
+    }
+  ]
+}

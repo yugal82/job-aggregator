@@ -1,0 +1,37 @@
+# ---- Secrets / env files ----
+.env
+.env.local
+.env.*.local
+server/.env
+
+# ---- Neon workspace state ----
+.neon
+
+# ---- Node / Vercel ----
+node_modules/
+.vercel/
+.next/
+.turbo/
+
+# ---- Python / server ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# ---- OS / editor ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# ---- Frontend (its own repo; keep server-only here) ----
+client/

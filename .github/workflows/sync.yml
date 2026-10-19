@@ -1,0 +1,43 @@
+name: sync-jobs
+
+# Scheduled sync — replaces the always-on APScheduler worker. Runs every
+# 6 hours (00:00 / 06:00 / 12:00 / 18:00 UTC). Hits every enabled source
+# in `config/companies.yaml` via `python -m app.cli sync --company all`.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:   # manual trigger button in the Actions tab
+
+concurrency:
+  group: sync-jobs
+  cancel-in-progress: false   # don't preempt a running sync; just skip the new one
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Run sync against Neon
+        env:
+          # Direct URL — avoids pooler for long-running DDL-ish writes.
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          # Reused for the ingestion session; no CORS / API_TOKEN needed in CLI.
+          LOG_LEVEL: INFO
+        run: python -m app.cli sync --company all

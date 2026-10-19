@@ -1,0 +1,23 @@
+companies:
+  - slug: stripe
+    name: Stripe
+    website: https://stripe.com
+    careers_url: https://stripe.com/jobs
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: stripe }
+        priority: high
+
+  - slug: netflix
+    name: Netflix
+    website: https://www.netflix.com
+    sources:
+      - source_name: Lever
+        adapter: lever
+        configuration: { site: netflix }
+        priority: medium
+
+  - slug: no-sources
+    name: Zero Sources Co
+    sources: []

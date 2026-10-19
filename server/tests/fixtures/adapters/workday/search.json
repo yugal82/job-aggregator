@@ -1,0 +1,19 @@
+{
+  "total": 2,
+  "jobPostings": [
+    {
+      "title": "Senior Synthetic Data Engineer - Autonomous Driving",
+      "externalPath": "/job/US-CA-Santa-Clara/Senior-Synthetic-Data-Engineer_JR2023850",
+      "locationsText": "5 Locations",
+      "postedOn": "Posted Today",
+      "bulletFields": ["JR2023850"]
+    },
+    {
+      "title": "Software Engineer, Platform",
+      "externalPath": "/job/US-WA-Remote/Software-Engineer-Platform_JR2024000",
+      "locationsText": "US, WA, Remote",
+      "postedOn": "Posted 2 Days Ago",
+      "bulletFields": ["JR2024000"]
+    }
+  ]
+}

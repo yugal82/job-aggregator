@@ -1,0 +1,38 @@
+{
+  "jobs": [
+    {
+      "id": 4567890,
+      "internal_job_id": 111,
+      "title": "Software Engineer, Payments",
+      "updated_at": "2026-09-01T12:34:56.000Z",
+      "first_published": "2026-08-15T09:00:00.000Z",
+      "requisition_id": "REQ-1001",
+      "location": {"name": "San Francisco, CA"},
+      "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4567890",
+      "content": "<p>Build <strong>payment</strong> systems.</p><p>Requirements:</p><ul><li>Python</li><li>PostgreSQL</li></ul>",
+      "departments": [
+        {"id": 1, "name": "Engineering"},
+        {"id": 2, "name": "Payments"}
+      ],
+      "offices": [{"id": 1, "name": "SF"}],
+      "metadata": [
+        {"id": 1, "name": "Employment Type", "value": "Full-time", "value_type": "single_select"},
+        {"id": 2, "name": "Workplace Type", "value": "On-site", "value_type": "single_select"}
+      ]
+    },
+    {
+      "id": 4567891,
+      "internal_job_id": 112,
+      "title": "Remote Backend Engineer",
+      "updated_at": "2026-09-02T00:00:00.000Z",
+      "first_published": "2026-08-20T00:00:00.000Z",
+      "requisition_id": null,
+      "location": {"name": "Remote - United States"},
+      "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4567891",
+      "content": "<p>Work from anywhere.</p>",
+      "departments": [{"id": 1, "name": "Engineering"}],
+      "metadata": []
+    }
+  ],
+  "meta": {"total": 2}
+}

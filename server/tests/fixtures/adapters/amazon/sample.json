@@ -1,0 +1,58 @@
+{
+  "error": null,
+  "hits": 2,
+  "jobs": [
+    {
+      "id": "f087e1df-4bc0-403e-9acd-8dc1773d3b3e",
+      "id_icims": "10568469",
+      "title": "Software Dev Engineer II (SDE2), Amazon Connect",
+      "company_name": "Amazon Development Center U.S., Inc.",
+      "country_code": "USA",
+      "city": "Santa Clara",
+      "state": "CA",
+      "location": "US, CA, Santa Clara",
+      "locations": [
+        "{\"normalizedStateName\":\"New York\",\"normalizedCountryCode\":\"USA\",\"city\":\"New York City\",\"countryIso3a\":\"USA\",\"countryIso2a\":\"US\",\"locationNonStemming\":\"United States, NY, New York City\",\"type\":\"ONSITE\",\"normalizedLocation\":\"New York, New York, USA\",\"region\":\"NY\",\"normalizedCityName\":\"New York\"}",
+        "{\"normalizedStateName\":\"California\",\"normalizedCountryCode\":\"USA\",\"city\":\"Santa Clara\",\"countryIso3a\":\"USA\",\"countryIso2a\":\"US\",\"locationNonStemming\":\"United States, CA, Santa Clara\",\"type\":\"ONSITE\",\"normalizedLocation\":\"Santa Clara, California, USA\",\"region\":\"CA\",\"normalizedCityName\":\"Santa Clara\"}"
+      ],
+      "normalized_location": "Santa Clara, California, USA",
+      "business_category": "aws",
+      "job_category": "Software Development",
+      "job_family": "Software Development",
+      "job_path": "/en/jobs/10568469/software-dev-engineer-ii-sde2-amazon-connect",
+      "job_schedule_type": "full-time",
+      "description": "<p>Build Amazon Connect at AWS. Design and ship distributed systems that handle millions of contact-center interactions daily.</p>",
+      "basic_qualifications": "<ul><li>3+ years of software engineering experience</li><li>Experience with distributed systems</li></ul>",
+      "preferred_qualifications": "<p>AWS familiarity, Python or Java fluency.</p>",
+      "posted_date": "October  3, 2026",
+      "updated_time": "1 day",
+      "url_next_step": "https://account.amazon.jobs/jobs/10568469/apply",
+      "team": {"label": "team-sde-primary"}
+    },
+    {
+      "id": "another-uuid",
+      "id_icims": "10568500",
+      "title": "Senior Software Development Engineer, Prime Video (Virtual)",
+      "company_name": "Amazon.com Services LLC",
+      "country_code": "USA",
+      "city": "Virtual",
+      "state": null,
+      "location": "US, Virtual",
+      "locations": [
+        "{\"locationNonStemming\":\"United States, Virtual\",\"type\":\"VIRTUAL\",\"normalizedCountryCode\":\"USA\",\"countryIso2a\":\"US\"}"
+      ],
+      "business_category": "pv",
+      "job_category": "Software Development",
+      "job_family": "Software Development",
+      "job_path": "/en/jobs/10568500/senior-sde-prime-video",
+      "job_schedule_type": "full-time",
+      "description": "<p>Lead backend systems for Prime Video streaming.</p>",
+      "basic_qualifications": "",
+      "preferred_qualifications": "",
+      "posted_date": "September 15, 2026",
+      "updated_time": "2 weeks",
+      "url_next_step": "https://account.amazon.jobs/jobs/10568500/apply",
+      "team": null
+    }
+  ]
+}

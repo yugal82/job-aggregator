@@ -1,0 +1,300 @@
+# Filter definitions used by GET /api/jobs.
+#
+# Role categories:  each key is a filter identifier (e.g. "swe"). A job matches
+#                   if its canonical_title matches ANY include pattern AND
+#                   NONE of the exclude patterns. Patterns are Postgres ILIKE.
+#
+# Countries:        each key is an ISO-ish code (e.g. "US"). A job matches if
+#                   ANY of its job_location rows satisfies either
+#                     (a) country column IN country_in, OR
+#                     (b) location_text matching any ILIKE pattern, OR
+#                     (c) location_text matching any case-sensitive regex (~).
+#
+# Company tiers:   curated company slug lists (e.g. "big_tech"). A job
+#                   matches a tier if its company's slug is in the list.
+#                   Query via /api/jobs?company_tier=<key>; `any` disables.
+#
+# Seniority levels: each key defines a career-stage filter (e.g. "entry").
+#                   Pattern: must match ANY include and NONE of the excludes.
+#                   Supports both ILIKE (simple) and case-insensitive regex
+#                   (Postgres `~*`) for level markers like "II"/"III"/"L5"
+#                   that need word boundaries.
+#                   Query via /api/jobs?seniority=<key>; `any` disables.
+#
+# Add new categories, countries, tiers, or seniority levels by appending to
+# the maps below — no code changes required. Pass `=any` to disable any filter.
+
+role_categories:
+  swe:
+    name: "Software Engineering"
+    include_title_ilike:
+      - "%software engineer%"
+      - "%software developer%"
+      - "%software architect%"
+      - "%backend%"
+      - "%back end%"
+      - "%back-end%"
+      - "%frontend%"
+      - "%front end%"
+      - "%front-end%"
+      - "%full stack%"
+      - "%fullstack%"
+      - "%full-stack%"
+      - "%mobile engineer%"
+      - "%mobile developer%"
+      - "%ios engineer%"
+      - "%ios developer%"
+      - "%android engineer%"
+      - "%android developer%"
+      - "%infrastructure engineer%"
+      - "%platform engineer%"
+      - "%cloud engineer%"
+      - "%distributed systems%"
+      - "%devops%"
+      - "%site reliability%"
+      - "% sre %"
+      - "%(sre)%"
+      - "%machine learning engineer%"
+      - "%ml engineer%"
+      - "%mlops%"
+      - "%ai engineer%"
+      - "%data engineer%"
+      - "%data platform%"
+      - "%application engineer%"
+      - "%web engineer%"
+      - "%web developer%"
+      - "%api engineer%"
+      - "%systems engineer%"
+      - "%embedded engineer%"
+      - "%embedded software%"
+      - "%game engineer%"
+      - "%game developer%"
+      - "%graphics engineer%"
+      - "% swe %"
+      - "%(swe)%"
+      - "% sde %"
+      - "%(sde)%"
+      - "%staff engineer%"
+      - "%principal engineer%"
+      - "%senior engineer%"
+      - "%engineer, %"
+      - "%engineer -%"
+      - "%developer, %"
+      - "%developer -%"
+    # Exclude wins over include — these cull non-software roles that would
+    # otherwise match the broad include patterns.
+    exclude_title_ilike:
+      - "%hardware engineer%"
+      - "%mechanical engineer%"
+      - "%electrical engineer%"
+      - "%chemical engineer%"
+      - "%civil engineer%"
+      - "%process engineer%"
+      - "%manufacturing engineer%"
+      - "%sales engineer%"
+      - "%support engineer%"
+      - "%customer engineer%"
+      - "%solutions engineer%"
+      - "%solutions architect%"
+      - "%security engineer%"
+      - "%security architect%"
+      - "%network engineer%"
+      - "%field engineer%"
+      - "%audio engineer%"
+      - "%sound engineer%"
+      - "%broadcast engineer%"
+      - "%environmental engineer%"
+      - "%quality engineer%"
+      - "%qa engineer%"
+      - "%test engineer%"
+      - "%safety engineer%"
+      - "%business development%"
+      # Chip / silicon design — hardware engineering roles that otherwise
+      # slip in via the broad "engineer, " / "engineer -" include patterns.
+      # Mostly surface at Nvidia / Intel / Qualcomm / Apple (AMR).
+      - "%asic %"              # "ASIC Design Engineer", "ASIC Verification Engineer"
+      - "%vlsi %"              # "VLSI Physical Design"
+      - "%physical design%"    # chip layout / floorplanning
+      - "%mixed signal%"       # analog/mixed-signal circuits
+      - "%serdes%"             # SerDes = high-speed hardware interconnect
+      - "%hardware design%"
+      - "%hardware validation%"
+      - "%hardware verification%"
+      - "%formal verification%" # typically hardware formal-verification roles
+      - "%verification engineer%" # chip/GPU verification. Software test roles
+                                  # are titled "QA/Test engineer" or "SDET".
+      - "%rtl design%"         # RTL = register-transfer-level, hardware
+      - "%rtl engineer%"
+      - "%silicon design%"
+      - "%semiconductor%"
+      - "%analog design%"
+      - "%rf engineer%"        # radio frequency
+      - "%rf design%"
+
+countries:
+  US:
+    name: "United States"
+    country_in:
+      - "US"
+      - "USA"
+      - "United States"
+      - "United States of America"
+    location_text_ilike:
+      - "%united states%"
+      - "%, usa%"
+      - "%(usa)%"
+      - "%(us)%"
+      - "%u.s.%"
+      - "%remote - us%"
+      - "%remote us%"
+      - "%us remote%"
+      - "%us - remote%"
+      - "%remote (us)%"
+      - "%remote, us%"
+      - "%remote from the us%"
+      - "%remote in the us%"
+      - "%remote in us%"
+    # Case-sensitive regex (~) so a US state abbrev doesn't collide with
+    # non-US tokens — e.g. "Canada" would otherwise match ILIKE %, CA%.
+    location_text_regex:
+      - "(^|, )(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)(,|$|\\s)"
+
+# Curated company sets. `companies` is a list of Company.slug values.
+# Draft membership — edit freely; unknown slugs are logged and skipped at
+# startup, not an error. Multiple tiers can overlap (e.g. google is in both).
+company_tiers:
+  big_tech:
+    label: "Big Tech"
+    description: "Marquee employers that publish via their own portals."
+    companies:
+      - google
+      - meta
+      - apple
+      - amazon
+      - microsoft
+      - netflix
+      - stripe
+      - airbnb
+      - spotify
+      - anthropic
+      - openai
+      - databricks
+      - pinterest
+      - coinbase
+
+  faang:
+    label: "FAANG"
+    description: "Meta, Apple, Amazon, Netflix, Google."
+    companies:
+      - meta
+      - apple
+      - amazon
+      - netflix
+      - google
+
+  yc_adjacent:
+    label: "YC-adjacent"
+    description: "Fast-growing companies with first-party ATS boards."
+    companies:
+      - stripe
+      - airbnb
+      - doordash
+      - ramp
+      - attentive
+      - robinhood
+
+# Career-stage filter. Default `entry` targets new-grad / early-career / L1-L3
+# roles. Combine with role_category=swe for "early-career SWE" specifically.
+seniority_levels:
+  entry:
+    label: "Early Career"
+    description: "Full-time new-grad / junior / L1-L3 / I-level SWE roles. Internships live in `internship`, not here."
+    # Positive signals (strong indicators of early career).
+    include_title_ilike:
+      - "%entry level%"
+      - "%entry-level%"
+      - "%junior %"
+      - "% jr %"
+      - "% jr."
+      - "% jr,%"
+      - "%new grad%"
+      - "%new graduate%"
+      - "%new college grad%"   # Nvidia "- New College Grad 2027" style
+      - "%college graduate%"   # Intel "... - College Graduate" style
+      - "%university grad%"
+      - "%recent graduate%"
+      - "%early career%"
+      - "%2025 grad%"
+      - "%2026 grad%"
+      - "%2027 grad%"          # also matches "2027 Graduate" (Atlassian style)
+      - "%graduate program%"
+      - "%graduate talent%"    # Intel "Graduate Talent (...)" program style
+      - "%rotation program%"   # Salesforce / Apple new-grad rotation
+      - "%rotational program%"
+    # Case-insensitive regex (word-boundary) for roman-numeral-I level markers:
+    # "Software Engineer I", "SDE I", "SWE 1", "Software Engineer 1".
+    include_title_regex:
+      - "\\y(engineer|developer|programmer|analyst|scientist)\\s+(i|1)\\y"
+      - "\\y(sde|swe)\\s+(i|1)\\y"
+      - "\\y(sde|swe)1\\y"
+      - "\\y(l|level)\\s*(1|2|3)\\y"
+    # Any seniority marker → NOT entry-level.
+    exclude_title_ilike:
+      - "%senior %"
+      - "%senior,%"
+      - "%senior-%"
+      - "% sr. %"
+      - "% sr %"
+      - "% sr-%"
+      - "%staff %"
+      - "%staff,%"
+      - "%staff-%"
+      - "%principal%"
+      - "%distinguished%"
+      - "%fellow%"
+      - "%director%"
+      - "%manager%"
+      - "%head of%"
+      - "%architect%"
+      - "%lead %"
+      - "%lead,%"
+      - "%lead-%"
+      - "% vp %"
+      - "% vp,%"
+      - "%vice president%"
+      - "%executive%"
+    # Word-boundary excludes for level markers II+/L4+/numeric 2+ seniors,
+    # plus any intern / internship / co-op title (keeps "international" safe
+    # since the regex uses word boundaries).
+    exclude_title_regex:
+      - "\\y(ii|iii|iv|v|vi|vii|viii|ix|x)\\y"
+      - "\\y(sde|swe)\\s*(2|3|4|5|6|7|8|9)\\y"
+      - "\\y(engineer|developer|programmer|analyst|scientist)\\s+(2|3|4|5|6|7|8|9)\\y"
+      - "\\y(l|level)\\s*(4|5|6|7|8|9)\\y"
+      - "\\y(intern|interns|internship|internships|co-?op)\\y"
+    # Source-native level tokens that force an entry-level match regardless
+    # of what the title says. Comes from ``jobs.level`` (populated by
+    # adapters that extract structured level info from the source). The
+    # structured level overrides title heuristics — a Microsoft "IC2" role
+    # whose title reads "Senior Software Engineer" still counts as entry
+    # because MSFT's level is authoritative. Add more as adapters mature:
+    #   - "L3"      Google / Lyft
+    #   - "SDE I"   Amazon (already caught by title regex; harmless dupe)
+    #   - "E3"      Meta
+    #   - "IC1"     Microsoft (rare for SWE)
+    include_levels:
+      - "IC2"
+
+  internship:
+    label: "Internship"
+    description: "Internships, co-ops, and student programs."
+    include_title_ilike:
+      - "%internship%"
+      - "%co-op%"
+      - "%coop program%"
+      - "%student program%"
+    include_title_regex:
+      - "\\y(intern|interns|co-?op)\\y"
+    exclude_title_ilike: []
+    exclude_title_regex: []
+

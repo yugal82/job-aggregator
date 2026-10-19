@@ -1,0 +1,27 @@
+{
+  "hiringOrganization": {
+    "name": "NVIDIA Corporation"
+  },
+  "jobPostingInfo": {
+    "id": "100000",
+    "title": "Senior Synthetic Data Engineer - Autonomous Driving",
+    "location": "US, CA, Santa Clara",
+    "additionalLocations": [
+      "US, TX, Remote",
+      "US, NY, Remote",
+      "US, WA, Remote"
+    ],
+    "jobDescription": "<p>Build <b>synthetic data pipelines</b> for autonomous vehicle training.</p><ul><li>Python</li><li>CUDA</li></ul>",
+    "jobReqId": "JR2023850",
+    "jobPostingId": "JR2023850-1",
+    "jobPostingSiteId": "NVIDIAExternalCareerSite",
+    "timeType": "Full time",
+    "startDate": "2026-10-01",
+    "postedOn": "Posted Today",
+    "externalUrl": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Senior-Synthetic-Data-Engineer_JR2023850",
+    "country": {
+      "descriptor": "United States of America",
+      "id": "bc33aa3152ec42d4995f4791a106ed09"
+    }
+  }
+}

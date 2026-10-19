@@ -1,0 +1,46 @@
+[
+  {
+    "id": "abc-123",
+    "text": "Senior Backend Engineer",
+    "createdAt": 1725100000000,
+    "updatedAt": 1725186400000,
+    "country": "US",
+    "workplaceType": "remote",
+    "categories": {
+      "commitment": "Full-time",
+      "department": "Engineering",
+      "location": "Remote - US",
+      "team": "Payments",
+      "allLocations": ["Remote - US", "New York, NY"]
+    },
+    "descriptionPlain": "Build reliable systems.",
+    "description": "<p>Build <em>reliable</em> systems.</p>",
+    "additional": "<p>Bonus: distributed systems.</p>",
+    "additionalPlain": "Bonus: distributed systems.",
+    "lists": [],
+    "hostedUrl": "https://jobs.lever.co/netflix/abc-123",
+    "applyUrl": "https://jobs.lever.co/netflix/abc-123/apply",
+    "requisitionCode": "REQ-42"
+  },
+  {
+    "id": "def-456",
+    "text": "Product Designer",
+    "createdAt": 1725200000000,
+    "updatedAt": 1725286400000,
+    "country": "US",
+    "workplaceType": "hybrid",
+    "categories": {
+      "commitment": "Full-time",
+      "department": "Design",
+      "location": "Los Angeles, CA",
+      "team": null,
+      "allLocations": ["Los Angeles, CA"]
+    },
+    "descriptionPlain": "Design great things.",
+    "description": "<p>Design great things.</p>",
+    "additional": null,
+    "additionalPlain": null,
+    "hostedUrl": "https://jobs.lever.co/netflix/def-456",
+    "applyUrl": "https://jobs.lever.co/netflix/def-456/apply"
+  }
+]

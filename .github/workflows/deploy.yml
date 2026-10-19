@@ -1,0 +1,48 @@
+name: deploy
+
+# On every push to main, run Alembic migrations against Neon first.
+# Vercel's own GitHub integration handles the actual app deploy on the
+# same push — this workflow just ensures the schema is up to date before
+# the new code starts serving traffic.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/migrations/**"
+      - "server/pyproject.toml"
+      - "server/requirements.txt"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Alembic upgrade head
+        env:
+          # Direct URL (never the pooler) — Alembic needs full session caps.
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: alembic upgrade head
+
+      # Vercel auto-deploys on push via its GitHub app; nothing to do here.

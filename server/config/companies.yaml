@@ -1,0 +1,394 @@
+# Companies + adapter configuration.
+#
+# Edit this file and run `python -m app.cli reconcile-config` (or re-run
+# `python -m app.seed`) to sync the changes into the database.
+#
+# Fields per company:
+#   slug          — unique identifier (DB natural key)
+#   name          — display name
+#   website       — corporate site (optional)
+#   careers_url   — hosted careers page (optional)
+#   sources[]     — one entry per ATS / feed we ingest from
+#     source_name   — matches `sources.name` in the DB (Greenhouse / Lever /
+#                     Ashby / AmazonCareers / NetflixCareers)
+#     adapter       — registry key (`greenhouse` / `lever` / `ashby` /
+#                     `amazon-careers` / `netflix-careers`)
+#     configuration — adapter-specific config (board_token, site,
+#                     job_board_name, filters, domain, ...)
+#     enabled       — set to false to pause a source without deleting the row
+#     priority      — high | medium | low (drives Phase 5 sync frequency)
+
+companies:
+  # ---- Greenhouse ----
+  - slug: stripe
+    name: Stripe
+    website: https://stripe.com
+    careers_url: https://stripe.com/jobs
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: stripe }
+        priority: high
+
+  - slug: airbnb
+    name: Airbnb
+    website: https://www.airbnb.com
+    careers_url: https://careers.airbnb.com
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: airbnb }
+        priority: high
+
+  - slug: discord
+    name: Discord
+    website: https://discord.com
+    careers_url: https://discord.com/careers
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: discord }
+        priority: medium
+
+  - slug: doordash
+    name: DoorDash
+    website: https://www.doordash.com
+    careers_url: https://careers.doordash.com
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: doordashusa }
+        priority: medium
+
+  - slug: robinhood
+    name: Robinhood
+    website: https://robinhood.com
+    careers_url: https://careers.robinhood.com
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: robinhood }
+        priority: medium
+
+  - slug: coinbase
+    name: Coinbase
+    website: https://www.coinbase.com
+    careers_url: https://www.coinbase.com/careers
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: coinbase }
+        priority: medium
+
+  - slug: databricks
+    name: Databricks
+    website: https://www.databricks.com
+    careers_url: https://www.databricks.com/company/careers
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: databricks }
+        priority: medium
+
+  - slug: pinterest
+    name: Pinterest
+    website: https://www.pinterest.com
+    careers_url: https://www.pinterestcareers.com
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: pinterest }
+        priority: medium
+
+  # ---- Lever ----
+  - slug: spotify
+    name: Spotify
+    website: https://www.spotify.com
+    careers_url: https://www.lifeatspotify.com
+    sources:
+      - source_name: Lever
+        adapter: lever
+        configuration: { site: spotify }
+        priority: high
+
+  - slug: lever
+    name: Lever
+    website: https://www.lever.co
+    careers_url: https://jobs.lever.co/lever
+    sources:
+      - source_name: Lever
+        adapter: lever
+        configuration: { site: lever }
+        priority: medium
+
+  - slug: leverdemo
+    name: Lever Demo Board
+    website: https://www.lever.co
+    careers_url: https://jobs.lever.co/leverdemo
+    sources:
+      - source_name: Lever
+        adapter: lever
+        configuration: { site: leverdemo }
+        priority: low
+
+  # ---- OFFICIAL / own-portal adapters ----
+  # These hit the companies' first-party job APIs. They outrank ATS feeds
+  # when the same job appears via multiple sources (see §29 of the design doc).
+  - slug: amazon
+    name: Amazon
+    website: https://www.amazon.com
+    careers_url: https://www.amazon.jobs
+    sources:
+      - source_name: AmazonCareers
+        adapter: amazon-careers
+        # Pre-filter at the Amazon API level: software-dev category, US only.
+        # Remove or widen `filters` to broaden the crawl.
+        configuration:
+          filters:
+            "category[]": software-development
+            "normalized_country_code[]": USA
+            sort: recent
+        priority: high
+
+  - slug: netflix
+    name: Netflix
+    website: https://www.netflix.com
+    careers_url: https://explore.jobs.netflix.net
+    sources:
+      - source_name: NetflixCareers
+        adapter: netflix-careers
+        configuration: { domain: netflix.com }
+        priority: high
+
+  # ---- Workday-hosted (one adapter, many tenants) ----
+  # Each company supplies its own host/tenant/site slug via configuration.
+  # Pre-filter at the Workday side via `applied_facets` to keep sync runtime
+  # bounded for 1000+ req rosters.
+  - slug: nvidia
+    name: NVIDIA
+    website: https://www.nvidia.com
+    careers_url: https://www.nvidia.com/en-us/about-nvidia/careers/
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: nvidia.wd5.myworkdayjobs.com
+          tenant: nvidia
+          site: NVIDIAExternalCareerSite
+          # applied_facets is tenant-specific and best left empty by default —
+          # Workday rejects most guessed facet names with 400. The query-time
+          # `country=US&role_category=swe` filters already narrow the output.
+          # To pre-filter server-side, inspect this tenant's careers page
+          # Network tab to find the correct facet parameter names/ids.
+          applied_facets: {}
+        priority: medium
+
+  # ---- Ripple (Greenhouse — probed OK) ----
+  - slug: ripple
+    name: Ripple
+    website: https://ripple.com
+    careers_url: https://ripple.com/careers/
+    sources:
+      - source_name: Greenhouse
+        adapter: greenhouse
+        configuration: { board_token: ripple }
+        priority: medium
+
+  # ---- Additional Workday-hosted candidates ----
+  # These are DISABLED pending site-slug discovery. For each tenant:
+  #   1. Open the public careers page (listed in careers_url).
+  #   2. In DevTools → Network, filter by `/wday/cxs/`.
+  #   3. The POST URL reveals the exact `tenant` + `site` path.
+  #   4. Fill in `host`/`tenant`/`site`, flip `enabled: true`, reconcile.
+  - slug: adobe
+    name: Adobe
+    website: https://www.adobe.com
+    careers_url: https://adobe.wd5.myworkdayjobs.com/external_experienced
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: adobe.wd5.myworkdayjobs.com
+          tenant: adobe
+          site: External_Experienced
+          applied_facets: {}
+        priority: medium
+
+  - slug: intel
+    name: Intel
+    website: https://www.intel.com
+    careers_url: https://intel.wd1.myworkdayjobs.com/External
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: intel.wd1.myworkdayjobs.com
+          tenant: intel
+          site: External
+          applied_facets: {}
+        priority: medium
+
+  - slug: salesforce
+    name: Salesforce
+    website: https://www.salesforce.com
+    careers_url: https://salesforce.wd12.myworkdayjobs.com/External_Career_Site
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: salesforce.wd12.myworkdayjobs.com
+          tenant: salesforce
+          site: External_Career_Site
+          applied_facets: {}
+        priority: medium
+
+  # ---- Workday candidates still blocked (left disabled) ----
+  # Qualcomm:   `qualcomm.wd12/external` responds 200 but total=0 — careers
+  #             site may not be Workday-exposed. Their public portal
+  #             (careers.qualcomm.com) is a JS SPA with a non-public API.
+  #             Needs frontend inspection to find real endpoint.
+  # Intuit:     `intuit.wd1` returns 401 (gated). Workday tenant exists but
+  #             is auth-protected. Not accessible via public API.
+  # ServiceNow: All `/wday/cxs/servicenow/*/jobs` return 422; careers portal
+  #             responds 403 to curl. May not be on Workday at all — the
+  #             careers portal (careers.servicenow.com) needs a browser
+  #             session to render.
+  - slug: qualcomm
+    name: Qualcomm
+    website: https://www.qualcomm.com
+    careers_url: https://careers.qualcomm.com
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: qualcomm.wd12.myworkdayjobs.com
+          tenant: qualcomm
+          site: External       # exists but returns 0 jobs — needs real slug
+          applied_facets: {}
+        enabled: false
+        priority: medium
+
+  - slug: intuit
+    name: Intuit
+    website: https://www.intuit.com
+    careers_url: https://jobs.intuit.com
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: intuit.wd1.myworkdayjobs.com
+          tenant: intuit
+          site: TODO           # 401 on all guesses — tenant is auth-gated
+          applied_facets: {}
+        enabled: false
+        priority: medium
+
+  - slug: servicenow
+    name: ServiceNow
+    website: https://www.servicenow.com
+    careers_url: https://careers.servicenow.com
+    sources:
+      - source_name: Workday
+        adapter: workday
+        configuration:
+          host: servicenow.wd1.myworkdayjobs.com
+          tenant: servicenow
+          site: TODO           # 422 everywhere — may not be Workday
+          applied_facets: {}
+        enabled: false
+        priority: medium
+
+  - slug: microsoft
+    name: Microsoft
+    website: https://www.microsoft.com
+    careers_url: https://jobs.careers.microsoft.com
+    sources:
+      # Microsoft careers come from a user-maintained scraper that keeps a
+      # canonical jobs.json on GitHub. The file is append-only — the pipeline
+      # treats every entry as currently open. Rotate the ``url`` if the
+      # scraper repo moves. See app/adapters/microsoft.py for the schema.
+      - source_name: MicrosoftCareers
+        adapter: microsoft-careers
+        configuration:
+          url: https://raw.githubusercontent.com/yugal82/msft-jobs/main/jobs.json
+        priority: high
+
+  - slug: atlassian
+    name: Atlassian
+    website: https://www.atlassian.com
+    careers_url: https://www.atlassian.com/company/careers/all-jobs
+    sources:
+      # Atlassian proxies its iCIMS portal data via a public JSON endpoint:
+      #   GET https://www.atlassian.com/endpoint/careers/listings
+      # Returns the full list inline (~340 jobs), no detail fetch required.
+      - source_name: AtlassianCareers
+        adapter: atlassian-careers
+        configuration: {}
+        priority: high
+
+  - slug: apple
+    name: Apple
+    website: https://www.apple.com
+    careers_url: https://jobs.apple.com/en-us/search
+    sources:
+      # Apple's SPA at jobs.apple.com embeds the full search payload in
+      # ``window.__staticRouterHydrationData`` on every request. We paginate
+      # ``/en-us/search?page=N`` and parse the hydration blob — no JS runtime
+      # needed. ``filters`` passes through verbatim as URL query params; see
+      # Apple's search UI for the current filter keys (location, team, …).
+      # ``location=united-states-USA`` keeps the sync US-bounded.
+      - source_name: AppleCareers
+        adapter: apple-careers
+        configuration:
+          filters:
+            location: united-states-USA
+        priority: high
+
+  # ---- Ashby ----
+  # Ashby's public posting-api now returns 401 for all boards (as of 2026-09).
+  # These entries are left in place but disabled — the adapter is exercised by
+  # unit tests, and we can re-enable once Ashby reopens the endpoint or we add
+  # an HTML-scrape fallback strategy.
+  - slug: openai
+    name: OpenAI
+    website: https://openai.com
+    careers_url: https://openai.com/careers
+    sources:
+      - source_name: Ashby
+        adapter: ashby
+        configuration: { job_board_name: openai }
+        enabled: false
+        priority: high
+
+  - slug: anthropic
+    name: Anthropic
+    website: https://www.anthropic.com
+    careers_url: https://www.anthropic.com/careers
+    sources:
+      - source_name: Ashby
+        adapter: ashby
+        configuration: { job_board_name: Anthropic }
+        enabled: false
+        priority: high
+
+  - slug: vercel
+    name: Vercel
+    website: https://vercel.com
+    careers_url: https://vercel.com/careers
+    sources:
+      - source_name: Ashby
+        adapter: ashby
+        configuration: { job_board_name: vercel }
+        enabled: false
+        priority: medium
+
+  - slug: linear
+    name: Linear
+    website: https://linear.app
+    careers_url: https://linear.app/careers
+    sources:
+      - source_name: Ashby
+        adapter: ashby
+        configuration: { job_board_name: Linear }
+        enabled: false
+        priority: medium

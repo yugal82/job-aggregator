@@ -1,0 +1,15 @@
+# Runtime deps for Vercel's Python builder. Keep in sync with pyproject.toml.
+# Local dev + tests use the pyproject install (`pip install -e .[dev]`).
+fastapi>=0.115
+uvicorn[standard]>=0.32
+sqlalchemy[asyncio]>=2.0.36
+alembic>=1.14
+asyncpg>=0.30
+pydantic>=2.9
+pydantic-settings>=2.6
+httpx>=0.28
+apscheduler>=3.10
+pgvector>=0.3
+python-json-logger>=2.0
+pyyaml>=6.0
+prometheus-client>=0.20
