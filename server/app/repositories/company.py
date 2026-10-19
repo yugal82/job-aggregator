@@ -9,6 +9,7 @@ from app.filters import (
     company_tier_filter_expression,
     country_filter_expression,
     is_disabled,
+    level_filter_expression,
     role_filter_expression,
     seniority_filter_expression,
     source_type_filter_expression,
@@ -96,9 +97,9 @@ def _active_job_count_subquery(filters: JobCountFilters | None = None):
             if expr is not None:
                 stmt = stmt.where(expr)
         if not is_disabled(filters.level):
-            wanted = [t.strip().lower() for t in filters.level.split(",") if t.strip()]  # type: ignore[union-attr]
-            if wanted:
-                stmt = stmt.where(func.lower(Job.level).in_(wanted))
+            expr = level_filter_expression(filters.level.split(","))  # type: ignore[union-attr]
+            if expr is not None:
+                stmt = stmt.where(expr)
     return stmt.scalar_subquery()
 
 

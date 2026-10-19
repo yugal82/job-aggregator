@@ -121,3 +121,53 @@ async def test_summary_response_includes_level(
     )
     for item in response.json()["items"]:
         assert item["level"] == "IC2"
+
+
+async def test_level_matches_any_part_of_a_range(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    """MSFT postings can span bands (`IC2/IC3`). Each part is matchable on
+    its own, but only whole parts — `IC2` must not hit `IC12`."""
+    acme = await CompanyRepo(db_session).create(name="Acme", slug="acme")
+    for title, level in [
+        ("Software Engineer", "IC2/IC3"),
+        ("Software Engineer II", "IC3/IC4"),
+        ("Principal Engineer", "IC12"),
+    ]:
+        await JobRepo(db_session).create(
+            company_id=acme.id, canonical_title=title, level=level,
+            status=JobStatus.ACTIVE,
+        )
+    await db_session.commit()
+
+    async def total(level: str) -> int:
+        resp = await client.get("/api/jobs", params={**NO_DEFAULTS, "level": level})
+        return resp.json()["total"]
+
+    assert await total("IC2") == 1
+    assert await total("ic3") == 2
+    assert await total("IC2/IC3") == 1  # the exact stored range still matches
+    assert await total("IC1") == 0
+
+
+async def test_entry_seniority_includes_ic2_ranges(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    """`seniority=entry` (include_levels: IC2) picks up `IC2/IC3` postings
+    whose title alone wouldn't qualify."""
+    acme = await CompanyRepo(db_session).create(name="Acme", slug="acme")
+    await JobRepo(db_session).create(
+        company_id=acme.id, canonical_title="Senior Software Engineer",
+        level="IC2/IC3", status=JobStatus.ACTIVE,
+    )
+    await JobRepo(db_session).create(
+        company_id=acme.id, canonical_title="Senior Software Engineer",
+        level="IC4/IC5", status=JobStatus.ACTIVE,
+    )
+    await db_session.commit()
+
+    resp = await client.get(
+        "/api/jobs",
+        params={"role_category": "any", "country": "any", "seniority": "entry"},
+    )
+    assert [j["level"] for j in resp.json()["items"]] == ["IC2/IC3"]

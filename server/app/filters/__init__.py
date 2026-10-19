@@ -14,6 +14,7 @@ from app.filters.company_tier import (
 )
 from app.filters.config import FilterConfig, get_filter_config, reload_filter_config
 from app.filters.country import country_filter_expression, known_countries
+from app.filters.level import level_filter_expression
 from app.filters.role import known_role_categories, role_filter_expression
 from app.filters.seniority import known_seniority_levels, seniority_filter_expression
 from app.filters.source_type import (
@@ -45,6 +46,7 @@ __all__ = [
     "known_role_categories",
     "known_seniority_levels",
     "known_tiers",
+    "level_filter_expression",
     "parse_source_types",
     "reload_filter_config",
     "role_filter_expression",

@@ -12,12 +12,13 @@ heuristics: a Microsoft ``IC2`` role whose title says "Senior Software
 Engineer" still counts as Early Career because MSFT's structured level
 is authoritative. Semantics:
 
-    MATCH = (title_match AND NOT title_exclude)  OR  (level IN include_levels)
+    MATCH = (title_match AND NOT title_exclude)  OR  (any level part IN include_levels)
 """
-from sqlalchemy import and_, func, not_, or_
+from sqlalchemy import and_, not_, or_
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.filters.config import get_filter_config
+from app.filters.level import level_filter_expression
 from app.models.job import Job
 
 
@@ -46,12 +47,8 @@ def seniority_filter_expression(key: str) -> ColumnElement | None:
         else:
             title_match = include_expr
 
-    # Structured-level short-circuit: comma'd list, lowered to hit the index.
-    level_match: ColumnElement | None = None
-    if rule.include_levels:
-        wanted = [token.strip().lower() for token in rule.include_levels if token.strip()]
-        if wanted:
-            level_match = func.lower(Job.level).in_(wanted)
+    # Structured-level short-circuit; ranges like ``IC2/IC3`` count too.
+    level_match = level_filter_expression(rule.include_levels)
 
     if title_match is not None and level_match is not None:
         return or_(title_match, level_match)

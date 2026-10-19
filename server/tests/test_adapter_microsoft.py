@@ -222,44 +222,33 @@ async def test_malformed_response_raises_clear_error() -> None:
         await http.close()
 
 
-async def test_ic_level_passes_through_to_canonical_level() -> None:
-    """`ic_level` from the scraper payload is normalized and surfaces as
-    `canonical.level` for downstream `?level=` filtering."""
-    payload = {
-        "jobs": [
-            {
-                "id": 1, "displayJobId": "A", "name": "SWE A",
-                "standardizedLocations": ["Redmond, WA, US"],
-                "postedTs": 1792000000, "workLocationOption": "onsite",
-                "atsJobId": "A", "positionUrl": "/careers/job/1",
-                "department": "Eng", "ic_level": "IC2",
-            },
-            {
-                "id": 2, "displayJobId": "B", "name": "SWE B",
-                "standardizedLocations": ["Redmond, WA, US"],
-                "postedTs": 1792000000, "workLocationOption": "onsite",
-                "atsJobId": "B", "positionUrl": "/careers/job/2",
-                "department": "Eng", "ic_level": "IC 3",  # space variant
-            },
-            {
-                "id": 3, "displayJobId": "C", "name": "SWE C",
-                "standardizedLocations": ["Redmond, WA, US"],
-                "postedTs": 1792000000, "workLocationOption": "onsite",
-                "atsJobId": "C", "positionUrl": "/careers/job/3",
-                "department": "Eng",  # ic_level missing entirely
-            },
-            {
-                "id": 4, "displayJobId": "D", "name": "SWE D",
-                "standardizedLocations": ["Redmond, WA, US"],
-                "postedTs": 1792000000, "workLocationOption": "onsite",
-                "atsJobId": "D", "positionUrl": "/careers/job/4",
-                "department": "Eng", "ic_level": "garbage-value",  # won't parse
-            },
-        ]
-    }
+async def test_level_passes_through_to_canonical_level() -> None:
+    """The scraper's `level` (or legacy `ic_level`) is normalized and
+    surfaces as `canonical.level` for downstream `?level=` filtering."""
+    levels = [
+        ("level", "IC2"),
+        ("ic_level", "IC 3"),       # legacy field name, space variant
+        (None, None),               # field missing entirely
+        ("level", "IC3 / ic-4"),    # range → each part canonicalized
+        ("level", "Intern"),        # non-IC band passes through
+        ("level", "   "),           # blank → None
+    ]
+    jobs = []
+    for i, (key, value) in enumerate(levels):
+        job = {
+            "id": i, "displayJobId": f"J{i}", "name": f"SWE {i}",
+            "standardizedLocations": ["Redmond, WA, US"],
+            "postedTs": 1792000000, "workLocationOption": "onsite",
+            "atsJobId": f"J{i}", "positionUrl": f"/careers/job/{i}",
+            "department": "Eng",
+        }
+        if key:
+            job[key] = value
+        jobs.append(job)
+
     http = HTTPClient(
         base_url="",
-        transport=httpx.MockTransport(_handler_from(payload)),
+        transport=httpx.MockTransport(_handler_from({"jobs": jobs})),
         rate_limit_per_second=0,
     )
     try:
@@ -268,14 +257,9 @@ async def test_ic_level_passes_through_to_canonical_level() -> None:
     finally:
         await http.close()
 
-    canonicals = [adapter.normalize(r) for r in raws]
-    assert canonicals[0].level == "IC2"
-    # "IC 3" normalizes to "IC3" — predictable canonical form
-    assert canonicals[1].level == "IC3"
-    # Missing field → None (filterable "unknown" rather than empty string)
-    assert canonicals[2].level is None
-    # Unparseable → None (don't propagate junk)
-    assert canonicals[3].level is None
+    assert [adapter.normalize(r).level for r in raws] == [
+        "IC2", "IC3", None, "IC3/IC4", "Intern", None,
+    ]
 
 
 async def test_default_url_used_when_config_omits_it() -> None:

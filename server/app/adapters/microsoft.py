@@ -27,8 +27,10 @@ Per-job fields consumed:
     atsJobId              "200060544"         → requisition_id fallback
     positionUrl           "/careers/job/<id>" → source URL (prefixed with host)
     department            "Software Engineering"
-    ic_level              "IC2" | None        → canonical.level (filterable
-                                                via /api/jobs?level=IC2)
+    level                 "IC2" | "IC3/IC4" | "Intern" | None
+                                              → canonical.level (filterable
+                                                via /api/jobs?level=IC2).
+                                                Older payloads used ``ic_level``.
 """
 import logging
 import re
@@ -45,17 +47,28 @@ from app.adapters.utils import (
 
 log = logging.getLogger(__name__)
 
-_IC_LEVEL_RE = re.compile(r"^\s*IC\s*-?\s*(\d)\s*$", re.IGNORECASE)
+_IC_LEVEL_RE = re.compile(r"^IC\s*-?\s*(\d+)$", re.IGNORECASE)
+_LEVEL_MAX_LEN = 32  # jobs.level is VARCHAR(32)
 
 
-def _normalize_ic_level(value: str | None) -> str | None:
-    """Canonicalize ``IC 2`` / ``ic-2`` / ``IC2`` → ``IC2``. Returns None
-    for anything that doesn't look like a valid IC token so filter queries
-    stay predictable."""
+def _normalize_level(value: str | None) -> str | None:
+    """Canonicalize the scraper's level. Each ``/``-separated part is
+    trimmed and IC variants (``IC 2`` / ``ic-2``) become ``IC2``, so
+    ``"IC3 / ic 4"`` → ``"IC3/IC4"``. Non-IC bands (``Intern``, ``ATR-B``)
+    pass through trimmed — the level filter matches any part."""
     if not value:
         return None
-    m = _IC_LEVEL_RE.match(str(value))
-    return f"IC{m.group(1)}" if m else None
+    parts = []
+    for part in str(value).split("/"):
+        part = part.strip()
+        if not part:
+            continue
+        m = _IC_LEVEL_RE.match(part)
+        parts.append(f"IC{m.group(1)}" if m else part)
+    level = "/".join(parts)
+    if not level or len(level) > _LEVEL_MAX_LEN:
+        return None
+    return level
 
 # Prefixed onto `positionUrl` so the stored URL is browseable. We keep the
 # well-known Microsoft careers host rather than guessing the scraper's
@@ -204,10 +217,7 @@ class MicrosoftAdapter(JobSourceAdapter):
             workplace_type=_normalize_workplace(payload.get("workLocationOption")),
             department=payload.get("department"),
             team=None,
-            # Scraper may emit ``ic_level: "IC2"`` once the IC-extraction
-            # patch lands. Normalize whitespace/dash variants ("IC 2", "IC-2")
-            # to the canonical ``IC2`` form so filtering is predictable.
-            level=_normalize_ic_level(payload.get("ic_level")),
+            level=_normalize_level(payload.get("level") or payload.get("ic_level")),
             salary_min=None,
             salary_max=None,
             salary_currency=None,

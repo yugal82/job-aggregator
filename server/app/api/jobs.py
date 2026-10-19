@@ -14,6 +14,7 @@ from app.filters import (
     company_tier_filter_expression,
     country_filter_expression,
     is_disabled,
+    level_filter_expression,
     parse_source_types,
     role_filter_expression,
     seniority_filter_expression,
@@ -102,11 +103,11 @@ def _apply_filters(
             stmt = stmt.where(sen_expr)
 
     if level and level.strip().lower() not in ("any", ""):
-        # Case-insensitive exact match. Comma-separated input OR's the terms
-        # so a client can request `level=IC2,IC3` to widen the band.
-        wanted = [t.strip().lower() for t in level.split(",") if t.strip()]
-        if wanted:
-            stmt = stmt.where(func.lower(Job.level).in_(wanted))
+        # Comma-separated input OR's the terms so a client can request
+        # `level=IC2,IC3` to widen the band; ranges like `IC2/IC3` match either.
+        level_expr = level_filter_expression(level.split(","))
+        if level_expr is not None:
+            stmt = stmt.where(level_expr)
 
     # Location filter: "remote" is a flag match, anything else is a text match
     # against the job_locations rows. Multiple locations OR together.
@@ -323,8 +324,9 @@ async def list_jobs(
     level: str | None = Query(
         default=None,
         description="Source-native level token (e.g. `IC2`, `L3`, `SDE II`). "
-        "Case-insensitive exact match against `jobs.level`. Comma-separated "
-        "values OR together (`level=IC2,IC3`). Unset = no restriction.",
+        "Case-insensitive match against any `/`-separated part of "
+        "`jobs.level` (`IC2` matches `IC2/IC3`). Comma-separated values OR "
+        "together (`level=IC2,IC3`). Unset = no restriction.",
     ),
     sort: SortKey = Query(
         default="newest",
