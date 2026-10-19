@@ -239,9 +239,16 @@ companies:
           host: salesforce.wd12.myworkdayjobs.com
           tenant: salesforce
           site: External_Career_Site
-          applied_facets: {}
-          # Salesforce's tenant 429s CI runners after ~50 fast requests;
-          # one request every 2s keeps the ~100-page crawl under the limit.
+          # Salesforce's tenant 429s most requests from any caller, so crawl
+          # only what we keep: Software Engineering + Data families in the
+          # US (~100 postings / 5 pages, vs 1,564 / 79 unfiltered). Facet
+          # ids come from the `facets` block of an unfiltered response.
+          applied_facets:
+            jobFamilyGroup:
+              - 14fa3452ec7c1011f90d0002a2100000   # Software Engineering
+              - 14fa3452ec7c1011f90cf661a7c80000   # Data
+            CF_-_REC_-_LRV_-_Job_Posting_Anchor_-_Country_from_Job_Posting_Location_Extended:
+              - bc33aa3152ec42d4995f4791a106ed09   # United States of America
           rate_limit_per_second: 0.5
         priority: medium
 
