@@ -33,5 +33,3 @@ build/
 .vscode/
 *.swp
 
-# ---- Frontend (its own repo; keep server-only here) ----
-client/
