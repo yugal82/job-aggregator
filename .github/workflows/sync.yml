@@ -1,8 +1,11 @@
 name: sync-jobs
 
 # Scheduled sync — replaces the always-on APScheduler worker. Runs every
-# 6 hours (00:00 / 06:00 / 12:00 / 18:00 UTC). Hits every enabled source
-# in `config/companies.yaml` via `python -m app.cli sync --company all`.
+# 6 hours (00:00 / 06:00 / 12:00 / 18:00 UTC).
+#
+# Fans out one job per company: a sequential `sync --company all` from a
+# runner pays a Neon round-trip per job and outgrew the timeout after ~4
+# companies. Parallel jobs are safe — the advisory lock is per company.
 
 on:
   schedule:
@@ -14,9 +17,35 @@ concurrency:
   cancel-in-progress: false   # don't preempt a running sync; just skip the new one
 
 jobs:
+  companies:
+    runs-on: ubuntu-latest
+    outputs:
+      slugs: ${{ steps.list.outputs.slugs }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pyyaml
+      - id: list
+        name: List companies with an enabled source
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, yaml
+          cfg = yaml.safe_load(open("server/config/companies.yaml"))
+          slugs = [
+              c["slug"] for c in cfg["companies"]
+              if any(s.get("enabled", True) for s in c.get("sources", []))
+          ]
+          print("slugs=" + json.dumps(slugs))
+          EOF
+
   sync:
+    needs: companies
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false        # one broken career site shouldn't cancel the rest
+      max-parallel: 10        # keep Neon connection count modest
+      matrix:
+        company: ${{ fromJSON(needs.companies.outputs.slugs) }}
     defaults:
       run:
         working-directory: server
@@ -34,10 +63,9 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Run sync against Neon
+      - name: Sync ${{ matrix.company }}
         env:
           # Direct URL — avoids pooler for long-running DDL-ish writes.
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
-          # Reused for the ingestion session; no CORS / API_TOKEN needed in CLI.
           LOG_LEVEL: INFO
-        run: python -m app.cli sync --company all
+        run: python -m app.cli sync --company ${{ matrix.company }}
