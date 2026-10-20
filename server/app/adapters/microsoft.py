@@ -70,11 +70,11 @@ def _normalize_level(value: str | None) -> str | None:
         return None
     return level
 
-# Prefixed onto `positionUrl` so the stored URL is browseable. We keep the
-# well-known Microsoft careers host rather than guessing the scraper's
-# upstream origin — that way links go to the real posting if MSFT keeps
-# the URL stable even when the scraper's path format evolves.
-_CAREERS_HOST = "https://jobs.careers.microsoft.com"
+# Prefixed onto `positionUrl` (``/careers/job/<position id>``) so the stored
+# URL opens the posting. It must be the Eightfold-hosted apply site: the
+# older ``jobs.careers.microsoft.com`` host redirects every path to the
+# generic careers landing page, dropping the job id.
+_CAREERS_HOST = "https://apply.careers.microsoft.com"
 
 _WORKPLACE_MAP = {
     "onsite": "Onsite",

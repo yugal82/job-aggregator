@@ -311,7 +311,7 @@ companies:
   - slug: microsoft
     name: Microsoft
     website: https://www.microsoft.com
-    careers_url: https://jobs.careers.microsoft.com
+    careers_url: https://apply.careers.microsoft.com/careers
     sources:
       # Microsoft careers come from a user-maintained scraper that keeps a
       # canonical jobs.json on GitHub. The file is append-only — the pipeline

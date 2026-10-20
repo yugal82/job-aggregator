@@ -137,6 +137,11 @@ async def update_job(
     if canonical.level is not None and job.level != canonical.level:
         job.level = canonical.level
 
+    # Same for the apply link: a moved posting URL (e.g. an adapter host
+    # fix) isn't a content change, but a stale link sends users nowhere.
+    if canonical.application_url and job.application_url != canonical.application_url:
+        job.application_url = canonical.application_url
+
     if content_changed:
         job.canonical_title = canonical.title
         job.description = canonical.description

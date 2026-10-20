@@ -322,3 +322,32 @@ async def test_normal_churn_still_closes_jobs(
     for i in range(1, CLOSE_AFTER_MISSES + 1):
         outcome = await _sync_ids(session_factory, company, source, cs, kept)
         assert outcome.jobs_closed == (5 if i == CLOSE_AFTER_MISSES else 0)
+
+
+async def test_moved_application_url_is_refreshed(
+    db_session: AsyncSession, session_factory: async_sessionmaker
+) -> None:
+    """A posting whose URL changes (e.g. an adapter host fix) must get the
+    new apply link even when nothing else about the job changed."""
+    company, source, cs = await _setup_company_source(db_session)
+    old, new = "https://old.example/job/1", "https://new.example/job/1"
+    for url in (old, new):
+        await run_sync(
+            session_factory=session_factory,
+            adapter=StubAdapter(
+                company_slug="stripe",
+                raw_jobs=[make_raw(source_job_id="1", title="Backend", application_url=url)],
+            ),
+            company_id=company.id,
+            source_id=source.id,
+            company_source_id=cs.id,
+            adapter_name="stub",
+        )
+
+    job = (await db_session.execute(select(Job))).scalar_one()
+    await db_session.refresh(job)
+    js = (await db_session.execute(select(JobSource))).scalar_one()
+    await db_session.refresh(js)
+    assert job.application_url == new
+    assert job.canonical_url == new
+    assert js.source_url == new

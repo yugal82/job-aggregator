@@ -92,7 +92,9 @@ async def test_source_url_prefixes_position_url_with_host() -> None:
 
     canonical = adapter.normalize(raws[0])
     assert canonical.source_url
-    assert canonical.source_url.startswith("https://jobs.careers.microsoft.com/")
+    # jobs.careers.microsoft.com drops the path on redirect; the apply
+    # host is the one that lands on the posting.
+    assert canonical.source_url.startswith("https://apply.careers.microsoft.com/careers/job/")
 
 
 async def test_posted_at_parsed_from_epoch_seconds() -> None:
