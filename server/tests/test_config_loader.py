@@ -162,6 +162,45 @@ companies:
     assert remaining == 0
 
 
+async def test_reconcile_can_disable_unlisted_links_instead(
+    db_session: AsyncSession, tmp_path
+) -> None:
+    """A source dropped from YAML (e.g. Netflix's old Lever board, now 404)
+    stops syncing but keeps its row and sync history."""
+    await _seed_ats_sources(db_session)
+    await reconcile_companies_from_yaml(db_session, FIXTURE)
+
+    yaml_path = tmp_path / "companies.yaml"
+    yaml_path.write_text(
+        """
+companies:
+  - slug: stripe
+    name: Stripe
+    sources: []
+""".lstrip()
+    )
+
+    stats = await reconcile_companies_from_yaml(
+        db_session, yaml_path, disable_unlisted_links=True
+    )
+    assert stats.links_disabled == 1
+    assert stats.links_removed == 0
+
+    stripe = await db_session.scalar(select(Company).where(Company.slug == "stripe"))
+    links = (
+        await db_session.execute(
+            select(CompanySource).where(CompanySource.company_id == stripe.id)
+        )
+    ).scalars().all()
+    assert [cs.enabled for cs in links] == [False]
+
+    # Idempotent: a second pass has nothing left to disable.
+    again = await reconcile_companies_from_yaml(
+        db_session, yaml_path, disable_unlisted_links=True
+    )
+    assert again.links_disabled == 0
+
+
 def test_load_config_rejects_extra_fields(tmp_path) -> None:
     bad = tmp_path / "bad.yaml"
     bad.write_text(

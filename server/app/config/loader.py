@@ -73,6 +73,7 @@ class ReconcileStats(BaseModel):
     links_created: int = 0
     links_updated: int = 0
     links_removed: int = 0
+    links_disabled: int = 0
     unknown_sources: list[str] = Field(default_factory=list)
 
 
@@ -88,12 +89,17 @@ async def reconcile_companies_from_yaml(
     path: str | Path,
     *,
     remove_unlisted_links: bool = False,
+    disable_unlisted_links: bool = False,
 ) -> ReconcileStats:
     """Upsert everything in the YAML file into the database.
 
     Set ``remove_unlisted_links=True`` to also delete company_source rows that
     no longer appear in YAML (a "reconcile" in the k8s sense). Default False
     to preserve any links added out-of-band via seed/scripts.
+
+    ``disable_unlisted_links=True`` is the non-destructive variant: unlisted
+    links are set ``enabled=False`` so they stop syncing but keep their
+    sync history. Ignored when ``remove_unlisted_links`` is set.
     """
     config = load_config(path)
     stats = ReconcileStats()
@@ -117,16 +123,21 @@ async def reconcile_companies_from_yaml(
             listed_source_ids.add(source.id)
             await _upsert_link(session, company, source, link, stats)
 
-        if remove_unlisted_links:
+        if remove_unlisted_links or disable_unlisted_links:
             existing = (
                 await session.execute(
                     select(CompanySource).where(CompanySource.company_id == company.id)
                 )
             ).scalars().all()
             for cs in existing:
-                if cs.source_id not in listed_source_ids:
+                if cs.source_id in listed_source_ids:
+                    continue
+                if remove_unlisted_links:
                     await session.delete(cs)
                     stats.links_removed += 1
+                elif cs.enabled:
+                    cs.enabled = False
+                    stats.links_disabled += 1
 
     await session.commit()
     return stats

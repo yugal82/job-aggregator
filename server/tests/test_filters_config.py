@@ -155,6 +155,16 @@ async def test_chip_design_titles_are_excluded_from_swe(
         "RTL Design Engineer",
         "Silicon Design Engineer",
         "Semiconductor Device Engineer",
+        # Seen in an Nvidia / Intel sync, labelled "New College Grad"
+        "DFT Engineer - New College Grad",
+        "SRAM Circuit Design Engineer - New College Grad 2026",
+        "Silicon Co-Design Engineer - New College Grad 2026",
+        "Power Methodology and Modeling Engineer - New College Grad 2026",
+        "PCIe Post-Silicon Validation Engineer - New College Grad 2027",
+        "Technical Product Marketing Engineer, Robotics Simulation - New College Grad 2027",
+        "Sr Back-End Facilities Development Engineer",
+        "Process Integration Development Engineer - Defect Metrology",
+        "Intel Foundry Module Development Engineer - CMP",
     ]
     software_titles = [
         "Software Engineer, DL Kernel Libraries",
@@ -164,6 +174,16 @@ async def test_chip_design_titles_are_excluded_from_swe(
         "Machine Learning Engineer, Perception",
         # DevTech == software at Nvidia; the ", " triggers %engineer, % include
         "Developer Technology Engineer, Public Sector",
+        # Software roles that sit next to hardware — must stay in.
+        "Software Engineer, Hardware Tools and Methodology - New College Grad 2026",
+        "SoC Software Engineer – New College Graduate 2026",
+        "EDA Tools Software Engineer",
+        "GPU Software Engineer",
+        # Hardware-adjacent words in genuine software / ML titles (soft excludes).
+        "Silicon Validation Software Engineer - GPU IP Validation and Integration",
+        "Software Development Engineer II, Post Silicon Validation",
+        "Software Engineer – DFT CAD Tools (RDSS Intern)",
+        "Machine Learning Engineer - Product Marketing Customer Analytics",
     ]
     for title in hardware_titles + software_titles:
         job = await JobRepo(db_session).create(

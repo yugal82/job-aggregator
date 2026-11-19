@@ -3,7 +3,7 @@
 Usage:
     python -m app.cli sync --company stripe
     python -m app.cli sync --company all
-    python -m app.cli reconcile-config [--path config/companies.yaml]
+    python -m app.cli reconcile-config [--path config/companies.yaml] [--disable-unlisted]
 """
 import argparse
 import asyncio
@@ -139,14 +139,17 @@ async def sync_company(company_slug: str) -> bool:
     return all(results)
 
 
-async def reconcile_config(path: Path) -> None:
+async def reconcile_config(path: Path, *, disable_unlisted: bool = False) -> None:
     async with SessionLocal() as session:
-        stats = await reconcile_companies_from_yaml(session, path)
+        stats = await reconcile_companies_from_yaml(
+            session, path, disable_unlisted_links=disable_unlisted
+        )
     print(
         f"companies: +{stats.companies_created} created, "
         f"~{stats.companies_updated} updated | "
         f"links: +{stats.links_created} created, "
-        f"~{stats.links_updated} updated"
+        f"~{stats.links_updated} updated, "
+        f"-{stats.links_disabled} disabled"
     )
     if stats.unknown_sources:
         print(
@@ -172,6 +175,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=str(DEFAULT_CONFIG_PATH),
         help=f"path to companies.yaml (default: {DEFAULT_CONFIG_PATH})",
     )
+    reconcile.add_argument(
+        "--disable-unlisted",
+        action="store_true",
+        help="disable (not delete) DB source links that companies.yaml no longer lists",
+    )
 
     return parser
 
@@ -185,7 +193,7 @@ def main() -> None:
             # Non-zero so a failed source shows red in GitHub Actions.
             sys.exit(1)
     elif args.cmd == "reconcile-config":
-        asyncio.run(reconcile_config(Path(args.path)))
+        asyncio.run(reconcile_config(Path(args.path), disable_unlisted=args.disable_unlisted))
 
 
 if __name__ == "__main__":

@@ -29,6 +29,7 @@ role_categories:
     name: "Software Engineering"
     include_title_ilike:
       - "%software engineer%"
+      - "%software development engineer%"  # Amazon/Apple/Intel "SDE I/II/III"
       - "%software developer%"
       - "%software architect%"
       - "%backend%"
@@ -130,6 +131,38 @@ role_categories:
       - "%analog design%"
       - "%rf engineer%"        # radio frequency
       - "%rf design%"
+      # Fab / facilities roles (Intel Foundry) that match "back-end" or
+      # "engineer -" without being software.
+      - "%facilities%"
+      - "%process integration%"
+      - "%module development%"
+      - "%metrology%"
+    # Hardware-adjacent terms that also appear in real software / ML roles
+    # ("Silicon Validation Software Engineer", "Software Engineer - DFT CAD
+    # Tools", "ML Engineer - Product Marketing Analytics"). Excluded only
+    # when the title doesn't match any `unless_title_ilike` pattern.
+    soft_exclude_title_ilike:
+      - "%dft %"               # design-for-test (scan/ATPG), chip hardware
+      - "%dft,%"
+      - "%design for test%"
+      - "%design-for-test%"
+      - "%circuit design%"     # "SRAM Circuit Design Engineer"
+      - "%post-silicon%"       # silicon bring-up / validation
+      - "%post silicon%"
+      - "%pre-silicon%"
+      - "%silicon co-design%"
+      - "%silicon validation%"
+      - "%power methodology%"  # chip power modeling
+      - "%signal integrity%"
+      - "%power integrity%"
+      - "%layout engineer%"
+      - "%packaging engineer%"
+      - "%product marketing%"  # marketing roles titled "... Engineer"
+    unless_title_ilike:
+      - "%software%"
+      - "%machine learning%"
+      - "%ml engineer%"
+      - "%ai engineer%"
 
 countries:
   US:

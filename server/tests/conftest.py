@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
@@ -7,9 +8,19 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config.settings import get_settings
-from app.db import get_session, get_session_factory
-from app.main import app
-from app.models import Base
+
+# Point the app's own engine at the test database before `app.db` builds it.
+# Otherwise code that uses the module engine directly (SyncLock, job runner)
+# connects via DATABASE_URL — which `<repo>/.env.local` sets to Neon prod.
+_test_url = get_settings().test_database_url
+if _test_url:
+    os.environ["DATABASE_URL"] = _test_url
+    os.environ["DATABASE_URL_UNPOOLED"] = _test_url
+    get_settings.cache_clear()
+
+from app.db import get_session, get_session_factory  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models import Base  # noqa: E402
 
 
 ENUM_TYPES = (

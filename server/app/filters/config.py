@@ -17,6 +17,11 @@ class RoleCategoryRule:
     name: str
     include_title_ilike: tuple[str, ...] = ()
     exclude_title_ilike: tuple[str, ...] = ()
+    # Excluded only when the title doesn't also match ``unless_title_ilike`` —
+    # for hardware-adjacent terms (DFT, post-silicon) that also show up in
+    # genuine software roles ("Silicon Validation Software Engineer").
+    soft_exclude_title_ilike: tuple[str, ...] = ()
+    unless_title_ilike: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -69,6 +74,8 @@ def _parse(data: dict[str, Any]) -> FilterConfig:
             name=cfg.get("name", key),
             include_title_ilike=tuple(cfg.get("include_title_ilike") or ()),
             exclude_title_ilike=tuple(cfg.get("exclude_title_ilike") or ()),
+            soft_exclude_title_ilike=tuple(cfg.get("soft_exclude_title_ilike") or ()),
+            unless_title_ilike=tuple(cfg.get("unless_title_ilike") or ()),
         )
 
     countries = {}

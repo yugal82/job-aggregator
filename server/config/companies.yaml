@@ -175,12 +175,14 @@ companies:
           host: nvidia.wd5.myworkdayjobs.com
           tenant: nvidia
           site: NVIDIAExternalCareerSite
-          # applied_facets is tenant-specific and best left empty by default —
-          # Workday rejects most guessed facet names with 400. The query-time
-          # `country=US&role_category=swe` filters already narrow the output.
-          # To pre-filter server-side, inspect this tenant's careers page
-          # Network tab to find the correct facet parameter names/ids.
-          applied_facets: {}
+          # Workday caps a search at 2,000 results and NVIDIA lists more than
+          # that globally, so an unfiltered crawl silently drops postings.
+          # Pre-filter to US (~1,300); the query-time role filter does the
+          # rest. Facet id comes from the `facets` block of an unfiltered
+          # response (locationHierarchy1 → "United States").
+          applied_facets:
+            locationHierarchy1:
+              - 2fcb99c455831013ea52fb338f2932d8   # United States
         priority: medium
 
   # ---- Ripple (Greenhouse — probed OK) ----
@@ -212,6 +214,8 @@ companies:
           tenant: adobe
           site: External_Experienced
           applied_facets: {}
+          # Workday 429s parallel crawls from one IP; pace to 1 req/s.
+          rate_limit_per_second: 1.0
         priority: medium
 
   - slug: intel
@@ -226,6 +230,8 @@ companies:
           tenant: intel
           site: External
           applied_facets: {}
+          # Workday 429s parallel crawls from one IP; pace to 1 req/s.
+          rate_limit_per_second: 1.0
         priority: medium
 
   - slug: salesforce

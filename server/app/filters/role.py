@@ -11,6 +11,8 @@ def role_filter_expression(key: str) -> ColumnElement | None:
     role category, or ``None`` if the key isn't registered.
 
     Semantics: title must match ANY include pattern AND NONE of the excludes.
+    A soft exclude only applies when the title matches none of the
+    ``unless`` patterns.
     """
     rule = get_filter_config().role_categories.get(key)
     if rule is None:
@@ -18,6 +20,12 @@ def role_filter_expression(key: str) -> ColumnElement | None:
 
     include_clauses = [Job.canonical_title.ilike(p) for p in rule.include_title_ilike]
     exclude_clauses = [Job.canonical_title.ilike(p) for p in rule.exclude_title_ilike]
+    if rule.soft_exclude_title_ilike:
+        soft = or_(*(Job.canonical_title.ilike(p) for p in rule.soft_exclude_title_ilike))
+        if rule.unless_title_ilike:
+            kept = or_(*(Job.canonical_title.ilike(p) for p in rule.unless_title_ilike))
+            soft = and_(soft, not_(kept))
+        exclude_clauses.append(soft)
 
     if not include_clauses:
         return None
