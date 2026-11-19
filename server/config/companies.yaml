@@ -183,6 +183,8 @@ companies:
           applied_facets:
             locationHierarchy1:
               - 2fcb99c455831013ea52fb338f2932d8   # United States
+          # Workday 429s parallel crawls from one IP; pace to 1 req/s.
+          rate_limit_per_second: 1.0
         priority: medium
 
   # ---- Ripple (Greenhouse — probed OK) ----
